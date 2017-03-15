@@ -13,22 +13,18 @@ def resize_image(image_file):
     height,width = img.shape[:2]
     aspect_ratio = float(width)/height
 
-    if width > height:
-        if width > 640:
-            width_new = 640
-            height_new = int(width_new / aspect_ratio)
-            img = cv2.resize(img, (width_new, height_new), interpolation = cv2.INTER_CUBIC)
-    else:
-        if height > 480:
-            height_new = 480
-            width_new = int(height_new * aspect_ratio)
-            img = cv2.resize(img, (width_new, height_new), interpolation = cv2.INTER_CUBIC)
+    if width > 640:
+        width_new = 640
+        height_new = int(width_new / aspect_ratio)
+        img = cv2.resize(img, (width_new, height_new), interpolation = cv2.INTER_CUBIC)
     return img
 
 start = time.time()
 
 # Load the classifier, class names, scaler, number of clusters and vocabulary
 classifier, class_names, std_slr, k, vocabulary = joblib.load("trained_variables.pkl")
+
+print classifier
 
 # Get the path of the testing set
 parser = ap.ArgumentParser()
@@ -89,8 +85,6 @@ idf = np.array(np.log((1.0 * len(image_files) + 1) / (1.0 * nbr_occurences + 1))
 
 # Scale the features
 test_features = std_slr.transform(test_features)
-
-print test_features
 
 # Perform the predictions
 predictions =  [class_names[i] for i in classifier.predict(test_features)]
