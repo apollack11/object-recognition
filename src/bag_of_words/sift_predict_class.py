@@ -23,6 +23,7 @@ start = time.time()
 
 # Load the classifier, class names, scaler, number of clusters and vocabulary
 classifier, class_names, std_slr, k, vocabulary = joblib.load("trained_variables.pkl")
+# classifier, class_names, std_slr, k, vocabulary = joblib.load("soda_and_screwdriver.pkl")
 
 # Get the path of the testing set
 parser = ap.ArgumentParser()
@@ -43,9 +44,11 @@ if args["testset"]:
         exit()
 
     image_files = []
+    actual = []
     for root, dirs, files in os.walk(test_directory, topdown=False):
         for d in dirs:
             for f in os.listdir(os.path.join(root,d)):
+                actual.append(d)
                 if f.endswith('.jpg') or f.endswith('.JPG') or f.endswith('.png') or f.endswith('.jpeg'):
                     image_files.append(root + '/' + d + '/' + f)
 else:
@@ -56,17 +59,16 @@ sift = cv2.SIFT()
 
 # List where all the descriptors are stored
 descriptor_list = []
+descriptors = np.zeros((1,128))
 for image_file in image_files:
     image = resize_image(image_file) # resizes image if it's larger than 640x480 or 480x640
-    h, w = image.shape[:2]
-    print ('Image size: ' + str(w) + ' x ' + str(h))
-    # image = cv2.imread(image_file)
+    # h, w = image.shape[:2]
+    # print ('Image size: ' + str(w) + ' x ' + str(h))
     kp, des = sift.detectAndCompute(image, None)
     descriptor_list.append((image_file, des))
+    descriptors = np.vstack((descriptors, des))
 
-descriptors = descriptor_list[0][1]
-for image_file, descriptor in descriptor_list[1:]:
-    descriptors = np.vstack((descriptors, descriptor))
+descriptors = np.delete(descriptors, 0, 0)
 
 #
 test_features = np.zeros((len(image_files), k), "float32")
@@ -75,17 +77,22 @@ for i in xrange(len(image_files)):
     for w in words:
         test_features[i][w] += 1
 
-# Perform Tf-Idf vectorization
-nbr_occurences = np.sum( (test_features > 0) * 1, axis = 0)
-idf = np.array(np.log((1.0 * len(image_files) + 1) / (1.0 * nbr_occurences + 1)), 'float32')
-
 # Scale the features
 test_features = std_slr.transform(test_features)
 
 # Perform the predictions
 predictions = [class_names[i] for i in classifier.predict(test_features)]
 
-print predictions
+correct = 0
+for i,prediction in enumerate(predictions):
+    if prediction == actual[i]:
+        correct = correct + 1
+
+print "Correct:",correct
+
+print "Total:",len(predictions)
+
+print "Accuracy:",float(correct)/len(predictions)
 
 end = time.time()
 

@@ -32,7 +32,7 @@ for root, dirs, files in os.walk(train_directory, topdown=False):
             class_names.append(d)
         num_files = 0
         for f in os.listdir(os.path.join(root,d)):
-            if f.endswith('.jpg') or f.endswith('.JPG') or f.endswith('.png') or f.endswith('.jpeg'):
+            if f.endswith('.jpg') or f.endswith('.JPG') or f.endswith('.png') or f.endswith('.jpeg') or f.endswith('.JPEG'):
                 image_files.append(root + '/' + d + '/' + f)
                 num_files += 1
         image_labels += [class_id] * num_files
@@ -49,26 +49,18 @@ print "Creating descriptor list"
 start = time.time()
 
 descriptor_list = []
+descriptors = np.zeros((1,128))
 for image_file in image_files:
-    print image_file
     # image = cv2.imread(image_file)
     image = resize_image(image_file)
     kp, des = sift.detectAndCompute(image, None)
     descriptor_list.append((image_file, des))
+    descriptors = np.vstack((descriptors, des))
+
+descriptors = np.delete(descriptors, 0, 0)
 
 end = time.time()
 print "Creating descriptor list time:",(end - start)
-
-print "Creating descriptors"
-start = time.time()
-
-descriptors = descriptor_list[0][1]
-for image_file, descriptor in descriptor_list[1:]:
-    if descriptor is not None:
-        descriptors = np.vstack((descriptors, descriptor))
-
-end = time.time()
-print "Creating descriptors time:",(end - start)
 
 # Perform k-means clustering
 print "K-Means Clustering"
@@ -95,12 +87,8 @@ for i in xrange(len(image_files)):
 end = time.time()
 print "Creating histogram of features time:",(end - start)
 
-# Perform Tf-Idf vectorization
 print "SVM setup"
 start = time.time()
-
-nbr_occurences = np.sum( (features > 0) * 1, axis = 0)
-idf = np.array(np.log((1.0 * len(image_files) + 1) / (1.0 * nbr_occurences + 1)), 'float32')
 
 # Scaling the words
 std_slr = StandardScaler().fit(features)
