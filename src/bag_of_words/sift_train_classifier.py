@@ -49,15 +49,32 @@ print "Creating descriptor list"
 start = time.time()
 
 descriptor_list = []
+image_files_to_remove = []
 descriptors = np.zeros((1,128))
 for image_file in image_files:
-    # image = cv2.imread(image_file)
     image = resize_image(image_file)
     kp, des = sift.detectAndCompute(image, None)
     descriptor_list.append((image_file, des))
     descriptors = np.vstack((descriptors, des))
 
+    ## in order for this check to work, will also need to remove elements from image_labels
+    # if des is not None:
+    #     descriptor_list.append((image_file, des))
+    #     descriptors = np.vstack((descriptors, des))
+    # else: # occurs if there are no discernable SIFT features in the image
+    #     print "des is empty, removing image"
+    #     print image_file
+    #     image_files_to_remove.append(image_file)
+
+# for image_file in image_files_to_remove:
+#     index = image_files.index(image_file)
+#     del image_labels[index]
+#     image_files.remove(image_file)
+
 descriptors = np.delete(descriptors, 0, 0)
+
+print len(image_files)
+print len(descriptor_list)
 
 end = time.time()
 print "Creating descriptor list time:",(end - start)
@@ -80,9 +97,10 @@ start = time.time()
 
 features = np.zeros((len(image_files), k), "float32")
 for i in xrange(len(image_files)):
-    words, distance = vq(descriptor_list[i][1], vocabulary)
+    words, distance = vq(whiten(descriptor_list[i][1]), vocabulary)
     for w in words:
-        features[i][w] += 1
+        if w >= 0 and w < 100:
+            features[i][w] += 1
 
 end = time.time()
 print "Creating histogram of features time:",(end - start)

@@ -7,7 +7,8 @@ import time
 
 cap = cv2.VideoCapture(0)
 
-directory = 'dataset/train/screwdriver'
+directory = 'dataset/train/other'
+os.mkdir(directory)
 
 counter = 0
 

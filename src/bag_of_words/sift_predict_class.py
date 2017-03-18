@@ -80,7 +80,7 @@ for i in xrange(len(image_files)):
 # Scale the features
 test_features = std_slr.transform(test_features)
 
-# Perform the predictions
+# predictions based on classifier
 predictions = [class_names[i] for i in classifier.predict(test_features)]
 
 correct = 0
