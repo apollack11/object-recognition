@@ -8,16 +8,6 @@ from sklearn.externals import joblib
 from scipy.cluster.vq import vq, kmeans, whiten
 import time
 
-def resize_image(img):
-    height,width = img.shape[:2]
-    aspect_ratio = float(width)/height
-
-    if width > 960:
-        width_new = 960
-        height_new = int(width_new / aspect_ratio)
-        img = cv2.resize(img, (width_new, height_new), interpolation = cv2.INTER_CUBIC)
-    return img
-
 # Load the classifier, class names, scaler, number of clusters and vocabulary
 # classifier, class_names, std_slr, k, vocabulary = joblib.load("dataset2.pkl")
 classifier, class_names, std_slr, k, vocabulary = joblib.load("trained_variables.pkl")
