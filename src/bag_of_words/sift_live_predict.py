@@ -19,8 +19,8 @@ def resize_image(img):
     return img
 
 # Load the classifier, class names, scaler, number of clusters and vocabulary
-classifier, class_names, std_slr, k, vocabulary = joblib.load("dataset2.pkl")
-# classifier, class_names, std_slr, k, vocabulary = joblib.load("trained_variables.pkl")
+# classifier, class_names, std_slr, k, vocabulary = joblib.load("dataset2.pkl")
+classifier, class_names, std_slr, k, vocabulary = joblib.load("trained_variables.pkl")
 # classifier, class_names, std_slr, k, vocabulary = joblib.load("soda_and_screwdriver.pkl")
 
 cap = cv2.VideoCapture(0)
@@ -60,19 +60,17 @@ while(True):
 
         average_confidence = sum(confidences) / len(confidences)
 
-        if average_confidence > 0:
-            prediction = 'soda can'
-        else: # average_confidence < 0:
-            prediction = 'screwdriver'
-        # else:
-        #     prediction = 'unsure'
+        # if average_confidence > 0:
+        #     prediction = 'soda can'
+        # else: # average_confidence < 0:
+        #     prediction = 'screwdriver'
 
         # predictions based on classifier (more than 2)
-        # predictions = [class_names[i] for i in classifier.predict(test_features)]
+        predictions = [class_names[i] for i in classifier.predict(test_features)]
 
         # Display the resulting frame
         font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(frame, prediction, (10,400), font, 2, (255,255,255), 2)
+        cv2.putText(frame, predictions[0], (10,400), font, 2, (255,255,255), 2)
 
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):

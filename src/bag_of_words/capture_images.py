@@ -7,8 +7,10 @@ import time
 
 cap = cv2.VideoCapture(0)
 
-directory = 'dataset/train/other'
-os.mkdir(directory)
+directory = 'dataset/train/pliers'
+print "DIRECTORY IS: ",directory
+if not os.path.exists(directory):
+    os.mkdir(directory)
 
 counter = 0
 
@@ -16,7 +18,7 @@ while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
 
-    if cv2.waitKey(1) & 0xFF == ord('c'):
+    if cv2.waitKey(25) & 0xFF == ord('c'):
         image_path = directory + '/' + str(counter) + '.jpg'
         cv2.imwrite(image_path, frame)
         print "Capturing image",image_path
