@@ -7,7 +7,7 @@ import time
 
 cap = cv2.VideoCapture(0)
 
-directory = 'dataset/train/pliers'
+directory = 'dataset/train/screwdriver'
 print "DIRECTORY IS: ",directory
 if not os.path.exists(directory):
     os.mkdir(directory)

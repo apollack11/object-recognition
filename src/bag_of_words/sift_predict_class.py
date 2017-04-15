@@ -29,6 +29,7 @@ classifier, class_names, std_slr, k, vocabulary = joblib.load("trained_variables
 parser = ap.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-t", "--testset", help="Path to test set")
+group.add_argument("-s", "--objectset", help="Path to object set")
 group.add_argument("-i", "--image", help="Path to image")
 parser.add_argument('-v',"--visualize", action='store_true')
 args = vars(parser.parse_args())
@@ -51,7 +52,29 @@ if args["testset"]:
                 actual.append(d)
                 if f.endswith('.jpg') or f.endswith('.JPG') or f.endswith('.png') or f.endswith('.jpeg'):
                     image_files.append(root + '/' + d + '/' + f)
+
+elif args["objectset"]:
+    test_directory = args["objectset"]
+    try:
+        os.listdir(test_directory)
+    except OSError:
+        print "No such directory {}\nCheck if the file exists".format(test_directory)
+        exit()
+
+    image_files = []
+    actual = []
+    for root, dirs, files in os.walk(test_directory, topdown=False):
+        for d in dirs:
+            if d == "tape":
+                for f in os.listdir(os.path.join(root,d)):
+                    actual.append(d)
+                    if f.endswith('.jpg') or f.endswith('.JPG') or f.endswith('.png') or f.endswith('.jpeg'):
+                        image_files.append(root + '/' + d + '/' + f)
+    print image_files
+    print actual
+
 else:
+    actual = []
     image_files = [args["image"]]
 
 # Create SIFT object
