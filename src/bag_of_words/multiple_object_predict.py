@@ -5,7 +5,8 @@ from sklearn.externals import joblib
 from scipy.cluster.vq import vq, kmeans, whiten
 
 # Load the classifier, class names, scaler, number of clusters and vocabulary
-classifier, class_names, std_slr, k, vocabulary = joblib.load("trained_variables.pkl")
+classifier, class_names, std_slr, k, vocabulary = joblib.load("dataset6.pkl")
+# classifier, class_names, std_slr, k, vocabulary = joblib.load("trained_variables.pkl")
 
 cap = cv2.VideoCapture(0)
 
@@ -15,6 +16,8 @@ sift = cv2.SIFT()
 # Variables for filtering results
 confidences = [0,0,0,0,0]
 counter = 0
+
+needResizing = False
 
 while(True):
     # Used for filtering results
@@ -31,7 +34,7 @@ while(True):
     # Create list of left and right images
     # frames = [left_half, right_half]
     frames = [frame]
-    
+
     # Classify object in each half
     for index,f in enumerate(frames):
         # List where all the descriptors are stored
@@ -56,7 +59,7 @@ while(True):
 
             # Add label to half of the image
             font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(frames[index], predictions[0], (40,40), font, 1, (255,255,255), 2)
+            cv2.putText(frames[index], predictions[0], (225,100), font, 1, (255,255,255), 2)
             # if index == 0: # if it's the left half of the image
             #     cv2.putText(frames[index], predictions[0], (40,40), font, 1, (255,255,255), 2)
             # elif index == 1: # if it's the right half of the image
@@ -68,13 +71,19 @@ while(True):
     # Resize image to fit monitor (if monitor is attached)
     # frame = cv2.resize(frame, (1920, 1080), interpolation = cv2.INTER_CUBIC)
 
+    if cv2.waitKey(1) & 0xFF == ord('c'):
+        image_path = imageName + '.jpg'
+        cv2.imwrite(image_path, frames[0])
+        print "Capturing image",image_path
+
     # Display the resulting frame
     for i,f in enumerate(frames):
         # Resize image to fit monitor (if monitor is attached)
         if i == 0:
-            frames[i] = cv2.resize(f, (1920, 1080), interpolation = cv2.INTER_CUBIC)
+            if needResizing:
+                frames[i] = cv2.resize(f, (1920, 1080), interpolation = cv2.INTER_CUBIC)
+            # out.write(frames[i])
             cv2.imshow('f'+str(i), frames[i])
-    # cv2.imshow('frame', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

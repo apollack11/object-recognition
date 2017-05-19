@@ -16,6 +16,8 @@ sift = cv2.SIFT()
 confidences = [0,0,0,0,0]
 counter = 0
 
+needResizing = False
+
 while(True):
     # Used for filtering results
     if counter > 4:
@@ -27,11 +29,11 @@ while(True):
     # List where all the descriptors are stored
     descriptor_list = []
     kp, des = sift.detectAndCompute(frame, None)
-    # frame = cv2.drawKeypoints(frame, kp, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
+    frame = cv2.drawKeypoints(frame, kp, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
     descriptor_list.append(('curFrame', des))
 
     # Check to make sure descriptor_list has elements
-    if descriptor_list[0][1] is not None:
+    if descriptor_list[0][1] is not None and len(kp) > 15:
         test_features = np.zeros((1, k), "float32")
         words, distance = vq(whiten(descriptor_list[0][1]), vocabulary)
         for w in words:
@@ -42,23 +44,20 @@ while(True):
         test_features = std_slr.transform(test_features)
 
         # predict based on classifier (2 objects)
-        confidences[counter] = classifier.decision_function(test_features)[0]
-        counter = counter + 1
+        # confidences[counter] = classifier.decision_function(test_features)[0]
+        # counter = counter + 1
 
-        average_confidence = sum(confidences) / len(confidences)
-
-        # if average_confidence > 0:
-        #     prediction = 'soda can'
-        # else: # average_confidence < 0:
-        #     prediction = 'screwdriver'
+        # average_confidence = sum(confidences) / len(confidences)
 
         # predictions based on classifier (more than 2)
         predictions = [class_names[i] for i in classifier.predict(test_features)]
 
-        # Display the resulting frame
+        # Add label to half of the image
         font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(frame, predictions[0], (10,400), font, 2, (255,255,255), 2)
+        cv2.putText(frame, predictions[0], (225,100), font, 1, (255,255,255), 2)
 
+    if needResizing:
+        frame = cv2.resize(frame, (1920, 1080), interpolation = cv2.INTER_CUBIC)
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
