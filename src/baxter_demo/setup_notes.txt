@@ -1,0 +1,14 @@
+
+Position of Left Arm for Camera
+27cm from table (measured a end of red part of hand, where the gripper is attached)
+/robot/limb/left/endpoint_state
+pose:
+  position:
+    x: 0.70458608235
+    y: 0.409203897708
+    z: -0.0225290558666
+  orientation:
+    x: -0.0217687455469
+    y: 0.999477438936
+    z: 0.0234954003352
+    w: 0.00435165925038

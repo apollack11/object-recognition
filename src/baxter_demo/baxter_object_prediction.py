@@ -8,6 +8,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from sklearn.externals import joblib
 from scipy.cluster.vq import vq, kmeans, whiten
+from object_recognition.msg import ObjectInfo
 
 class webcam_image:
     def __init__(self):
@@ -17,7 +18,12 @@ class webcam_image:
         # baxter camera Subscriber
         self.image_sub = rospy.Subscriber("/cameras/left_hand_camera/image",Image,self.callback)
         # Publisher
-        # self.treasure_pub = rospy.Publisher("treasure_point",Point,queue_size=10)
+        self.object_location_pub = rospy.Publisher("object_location",ObjectInfo,queue_size=10)
+
+        self.object_info = ObjectInfo()
+        self.object_info.names = ['','','']
+        self.object_info.x = [0,0,0]
+        self.object_info.y = [0,0,0]
 
     def callback(self,data):
         try:
@@ -60,6 +66,13 @@ class webcam_image:
             contours, hierarchy = cv2.findContours(dst,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
             contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
             cnt = contours[0]
+
+            M = cv2.moments(cnt)
+            self.object_info.x[i] = int(M["m10"]/M["m00"])
+            self.object_info.y[i] = int(M["m01"]/M["m00"])
+
+            # cv2.circle(frames[i],(int(M["m10"]/M["m00"]),int(M["m01"]/M["m00"])), 5, (255*one_hot[0],255*one_hot[1],255*one_hot[2]), -1)
+
             rect = cv2.minAreaRect(cnt)
             box = cv2.cv.BoxPoints(rect)
             cv2.drawContours(frames[i],[np.int0(box)],0,(255*one_hot[0],255*one_hot[1],255*one_hot[2]),2)
@@ -78,6 +91,8 @@ class webcam_image:
                 # predictions based on classifier (more than 2)
                 predictions[i][counter] = [class_names[j] for j in classifier.predict(test_features)][0]
                 prediction = max(set(predictions[i]), key=predictions[i].count)
+
+                self.object_info.names[i] = prediction
 
                 # Find the point at the top of each bounding box to put label
                 y = int(min(box[0][1],box[1][1],box[2][1],box[3][1]))
@@ -105,6 +120,8 @@ class webcam_image:
         # Display the resulting frame
         cv2.imshow('f', frame)
 
+        self.object_location_pub.publish(self.object_info)
+
         cv2.waitKey(1)
 
 def main(args):
@@ -121,7 +138,7 @@ if __name__ == '__main__':
     print "OpenCV Version:",cv2.__version__
 
     # Load the classifier, class names, scaler, number of clusters and vocabulary
-    classifier, class_names, std_slr, k, vocabulary = joblib.load("dataset6.pkl")
+    classifier, class_names, std_slr, k, vocabulary = joblib.load("/home/adam/ros-workspaces/winterproject_ws/src/object_recognition/src/baxter_demo/dataset6.pkl")
 
     # Create SIFT object
     sift = cv2.SIFT()
