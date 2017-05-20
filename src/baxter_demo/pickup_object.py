@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 from gripnode import GripperClient
 
 import rospy
@@ -7,7 +6,7 @@ import image_geometry
 from sensor_msgs.msg import CameraInfo
 from geometry_msgs.msg import Point
 from baxter_core_msgs.msg import EndpointState, DigitalIOState
-import planningnode as pnode
+import planning_node as pnode
 import baxter_interface
 
 cameraStateInfo = None
@@ -103,7 +102,7 @@ def testnode():
         leftsafe = [0.5, .5, zsafe, 0.99, 0.01, 0.01, 0.01]
         rospy.sleep(2)
 
-        print "Lets pick up the cup"
+        print "Lets pick up the object"
 
         gc.command(position=100.0, effort=50.0)
         gc.wait()
@@ -111,27 +110,27 @@ def testnode():
 
         arm_goaway()
         rospy.sleep(0.1)
-        pnode.initplannode(dsafe, "right")
+        pnode.initplannode(dsafe, "left")
         rospy.sleep(0.1)
-        pnode.initplannode(dpick, "right")
+        pnode.initplannode(dpick, "left")
         rospy.sleep(0.1)
 
         gc.command(position=50.0, effort=50.0)
         gc.wait()
 
-        pnode.initplannode(dsafe, "right")
+        pnode.initplannode(dsafe, "left")
         rospy.sleep(0.1)
-        pnode.initplannode(dpick, "right")
+        pnode.initplannode(dpick, "left")
         rospy.sleep(0.1)
 
-        print "Lets drop the cup"
+        print "Lets put the object back down"
 
         gc.command(position=100.0, effort=50.0)
         gc.wait()
 
-        pnode.initplannode(dsafe, "right")
+        pnode.initplannode(dsafe, "left")
         rospy.sleep(0.1)
-        pnode.initplannode(ddropsafe, "right")
+        pnode.initplannode(ddropsafe, "left")
         rospy.sleep(0.1)
 
         return
@@ -144,20 +143,20 @@ def button_press(data):
         testnode()
 
 
-def arm_goaway():
-    left2_w0 = rospy.get_param('left2_w0', default=0)
-    left2_w1 = rospy.get_param('left2_w1', default=0)
-    left2_w2 = rospy.get_param('left2_w2', default=0)
-    left2_e0 = rospy.get_param('left2_e0', default=0)
-    left2_e1 = rospy.get_param('left2_e1', default=0)
-    left2_s0 = rospy.get_param('left2_s0', default=0)
-    left2_s1 = rospy.get_param('left2_s1', default=0)
-
-    # Send the left arm to the desired position
-    away = {'left_w0': left2_w0, 'left_w1': left2_w1, 'left_w2': left2_w2, 'left_e0': left2_e0, 'left_e1': left2_e1,
-            'left_s0': left2_s0, 'left_s1': left2_s1}
-    limb = baxter_interface.Limb('left')
-    limb.move_to_joint_positions(away)
+# def arm_goaway():
+#     left2_w0 = rospy.get_param('left2_w0', default=0)
+#     left2_w1 = rospy.get_param('left2_w1', default=0)
+#     left2_w2 = rospy.get_param('left2_w2', default=0)
+#     left2_e0 = rospy.get_param('left2_e0', default=0)
+#     left2_e1 = rospy.get_param('left2_e1', default=0)
+#     left2_s0 = rospy.get_param('left2_s0', default=0)
+#     left2_s1 = rospy.get_param('left2_s1', default=0)
+#
+#     # Send the left arm to the desired position
+#     away = {'left_w0': left2_w0, 'left_w1': left2_w1, 'left_w2': left2_w2, 'left_e0': left2_e0, 'left_e1': left2_e1,
+#             'left_s0': left2_s0, 'left_s1': left2_s1}
+#     limb = baxter_interface.Limb('left')
+#     limb.move_to_joint_positions(away)
 
 
 def arm_setup():
@@ -176,25 +175,26 @@ def arm_setup():
     limb.move_to_joint_positions(home)
 
 if __name__ == '__main__':
-    print "plan node is running"
+    print "Plan node is running"
     rospy.init_node('pickup_object', log_level=rospy.INFO)
     cameraTopic = "/cameras/left_hand_camera/camera_info"
     # pixelTopic = "/shell_game/pixel_point"
     cameraStateTopic = "/robot/limb/left/endpoint_state"
     leftButtonTopic = "/robot/digital_io/left_button_ok/state"
 
+    print "Moving arm to correct location"
     arm_setup()
-    print "test1"
-    rospy.Subscriber(cameraTopic, CameraInfo, initCamera)
-    print "test2"
-    rospy.Subscriber(cameraStateTopic, EndpointState, getCameraState)
-    print "test3"
-    rate = rospy.Rate(50)
-    print "test4"
-    while (cameraInfo is None) or (cameraStateInfo is None):
-        rate.sleep()
-    print "test5"
-    rospy.Subscriber(leftButtonTopic, DigitalIOState, button_press)
-    rospy.Subscriber("/object_location", Point, getTreasurePoint)
-    print "test6"
+    # print "test1"
+    # rospy.Subscriber(cameraTopic, CameraInfo, initCamera)
+    # print "test2"
+    # rospy.Subscriber(cameraStateTopic, EndpointState, getCameraState)
+    # print "test3"
+    # rate = rospy.Rate(50)
+    # print "test4"
+    # while (cameraInfo is None) or (cameraStateInfo is None):
+    #     rate.sleep()
+    # print "test5"
+    # rospy.Subscriber(leftButtonTopic, DigitalIOState, button_press)
+    # rospy.Subscriber("/object_location", Point, getTreasurePoint)
+    # print "test6"
     rospy.spin()

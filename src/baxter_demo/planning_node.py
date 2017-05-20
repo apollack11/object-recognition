@@ -102,17 +102,17 @@ def move_pos(goal, limb, timeout=3):
         # Begin interaction with move_it joint_action_server.
         # Object of type move_group_commander is used to
         # interact with Baxter using joint_action_server
-        ra = moveit_commander.MoveGroupCommander("right_arm")
+        la = moveit_commander.MoveGroupCommander("left_arm")
 
         # Set desired joint angles to plan in joint space
-        ra.set_joint_value_target(goal)
+        la.set_joint_value_target(goal)
 
         # FOR JOINT SPACE PLANNING:
         # cite1: test_moveit.py from NXR repo linked in Course notes
-        ra.plan()
+        la.plan()
 
         # Sets Baxter arm in Motion
-        ra.go()
+        la.go()
 
     else:
         print("INVALID POSE")
@@ -125,10 +125,10 @@ def move_pos(goal, limb, timeout=3):
                 des_joints[i] = ikt.joints[0].position[i]
 
             # Same moveit! calling strategy as is written in if code block
-            ra = moveit_commander.MoveGroupCommander("right_arm")
-            ra.set_joint_value_target(des_joints)
-            ra.plan()
-            ra.go()
+            la = moveit_commander.MoveGroupCommander("left_arm")
+            la.set_joint_value_target(des_joints)
+            la.plan()
+            la.go()
 
         else:
             print "-------------INVALID POSITION------------"
