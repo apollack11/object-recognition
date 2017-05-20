@@ -28,25 +28,23 @@ while(True):
     ret, frame = cap.read()
 
     # Split frame into left and right halves
-    # left_half = frame[0:480, 0:640/2]
-    # right_half = frame[0:480, 640/2:640]
+    left_frame = frame[0:480, 0:640/3]
+    middle_frame = frame[0:480, 640/3:2*640/3]
+    right_frame = frame[0:480, 2*640/3:640]
 
     # Create list of left and right images
-    # frames = [left_half, right_half]
-    frames = [frame]
+    frames = [left_frame, middle_frame, right_frame]
 
-    # Classify object in each half
-    for index,f in enumerate(frames):
-        # List where all the descriptors are stored
-        descriptor_list = []
-        kp, des = sift.detectAndCompute(f, None)
-        frames[index] = cv2.drawKeypoints(f, kp, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
-        descriptor_list.append(('curFrame', des))
+    # Check to make sure descriptor_list has elements
+    items = []
+    for i,f in enumerate(frames):
+        kps, des = sift.detectAndCompute(f, None)
+        frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
 
-        # Check to make sure descriptor_list has elements
-        if descriptor_list[0][1] is not None and len(kp) > 15:
+        if des is not None and len(kps) > 15:
+            items.append([kp for kp in kps])
             test_features = np.zeros((1, k), "float32")
-            words, distance = vq(whiten(descriptor_list[0][1]), vocabulary)
+            words, distance = vq(whiten(des), vocabulary)
             for w in words:
                 if w >= 0 and w < 100:
                     test_features[0][w] += 1
@@ -55,35 +53,38 @@ while(True):
             test_features = std_slr.transform(test_features)
 
             # predictions based on classifier (more than 2)
-            predictions = [class_names[i] for i in classifier.predict(test_features)]
+            predictions = [class_names[j] for j in classifier.predict(test_features)]
 
             # Add label to half of the image
             font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(frames[index], predictions[0], (225,100), font, 1, (255,255,255), 2)
-            # if index == 0: # if it's the left half of the image
-            #     cv2.putText(frames[index], predictions[0], (40,40), font, 1, (255,255,255), 2)
-            # elif index == 1: # if it's the right half of the image
-            #     cv2.putText(frames[index], predictions[0], (360,40), font, 1, (255,255,255), 2)
+            cv2.putText(frames[i], predictions[0], (40,100), font, 1, (255,255,255), 2)
+
+    for i,item in enumerate(items):
+        xsum = 0
+        ysum = 0
+        for kp in item:
+            xsum += kp.pt[0]
+            ysum += kp.pt[1]
+        avg_item_pt = (xsum/len(item), ysum/len(item))
+        ones = [0,0,0]
+        ones[i] = 1
+        cv2.circle(frames[i],(int(avg_item_pt[0]),int(avg_item_pt[1])), 5, (255*ones[0],255*ones[1],255*ones[2]), -1)
+
+    # Combine smaller frames into one
+    frame[0:480, 0:640/3] = frames[0]
+    frame[0:480, 640/3:2*640/3] = frames[1]
+    frame[0:480, 2*640/3:640] = frames[2]
 
     # Add a dividing line down the middle of the frame
-    # cv2.line(frame, (318,0), (318,480), (255,0,0), 4)
+    cv2.line(frame, (640/3,0), (640/3,480), (255,0,0), 4)
+    cv2.line(frame, (2*640/3,0), (2*640/3,480), (255,0,0), 4)
 
     # Resize image to fit monitor (if monitor is attached)
-    # frame = cv2.resize(frame, (1920, 1080), interpolation = cv2.INTER_CUBIC)
-
-    if cv2.waitKey(1) & 0xFF == ord('c'):
-        image_path = imageName + '.jpg'
-        cv2.imwrite(image_path, frames[0])
-        print "Capturing image",image_path
+    if needResizing:
+        frame = cv2.resize(frame, (1920, 1080), interpolation = cv2.INTER_CUBIC)
 
     # Display the resulting frame
-    for i,f in enumerate(frames):
-        # Resize image to fit monitor (if monitor is attached)
-        if i == 0:
-            if needResizing:
-                frames[i] = cv2.resize(f, (1920, 1080), interpolation = cv2.INTER_CUBIC)
-            # out.write(frames[i])
-            cv2.imshow('f'+str(i), frames[i])
+    cv2.imshow('f', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

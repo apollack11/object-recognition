@@ -23,18 +23,20 @@ while(True):
     # frame = cv2.drawKeypoints(frame, kp, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
 
     pts = [keypoint.pt for keypoint in kp]
-    item_pts = [[pt for pt in pts if pt[0] < 213],[pt for pt in pts if pt[0] > 213 and pt[0] < 426],[pt for pt in pts if pt[0] > 426]]
 
-    for i,item in enumerate(item_pts):
-        xsum = 0
-        ysum = 0
-        for pt in item:
-            xsum += pt[0]
-            ysum += pt[1]
-        avg_item_pt = (xsum/len(item), ysum/len(item))
+    test_k = 3
+    clusters, variance = kmeans(whiten(pts), test_k, 1)
+
+    cluster_assignments = vq(whiten(pts), clusters)
+    print len(cluster_assignments[0])
+    print cluster_assignments[0]
+
+    kp_clusters = dict(zip(pts, cluster_assignments[0]))
+
+    for pt in kp_clusters.items():
         ones = [0,0,0]
-        ones[i] = 1
-        cv2.circle(frame,(int(avg_item_pt[0]),int(avg_item_pt[1])), 5, (255*ones[0],255*ones[1],255*ones[2]), -1)
+        ones[pt[1]] = 1
+        cv2.circle(frame,(int(pt[0][0]),int(pt[0][1])), 5, (255*ones[0],255*ones[1],255*ones[2]), -1)
 
     # Check to make sure des has elements and there are more than 15 keypoints
     if des is not None and len(kp) > 15:
