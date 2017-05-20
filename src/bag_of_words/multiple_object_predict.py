@@ -1,6 +1,7 @@
 #!/usr/local/bin/python2.7
 import cv2
 import numpy as np
+import imutils
 from sklearn.externals import joblib
 from scipy.cluster.vq import vq, kmeans, whiten
 
@@ -27,6 +28,10 @@ while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
 
+    b_channel, g_channel, r_channel = cv2.split(frame)
+    alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) #creating a dummy alpha channel image.
+    frame = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
+
     # Split frame into left and right halves
     left_frame = frame[0:480, 0:640/3]
     middle_frame = frame[0:480, 640/3:2*640/3]
@@ -34,12 +39,13 @@ while(True):
 
     # Create list of left and right images
     frames = [left_frame, middle_frame, right_frame]
+    labels = [np.zeros((20,100,4), np.uint8),np.zeros((20,100,4), np.uint8),np.zeros((20,100,4), np.uint8)]
 
     # Check to make sure descriptor_list has elements
     items = []
     for i,f in enumerate(frames):
         kps, des = sift.detectAndCompute(f, None)
-        frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
+        # frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
 
         if des is not None and len(kps) > 15:
             items.append([kp for kp in kps])
@@ -55,33 +61,33 @@ while(True):
             # predictions based on classifier (more than 2)
             predictions = [class_names[j] for j in classifier.predict(test_features)]
 
-            # Add label to half of the image
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(frames[i], predictions[0], (40,100), font, 1, (255,255,255), 2)
+
+            one_hot = [0,0,0]
+            one_hot[i] = 1
 
             gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
-
-            ones = [0,0,0]
-            ones[i] = 1
 
             contours, hierarchy = cv2.findContours(gray,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
             contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
             cnt = contours[0]
             rect = cv2.minAreaRect(cnt)
-            box = np.int0(cv2.cv.BoxPoints(rect))
-            cv2.drawContours(frames[i],[box],0,(255*ones[0],255*ones[1],255*ones[2]),2)
+            box = cv2.cv.BoxPoints(rect)
+            cv2.drawContours(frames[i],[np.int0(box)],0,(255*one_hot[0],255*one_hot[1],255*one_hot[2]),2)
 
+            # Add label to partial frame
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(frames[i], predictions[0], (int(box[1][0]),int(box[1][1])-5), font, 0.5, (255*one_hot[0],255*one_hot[1],255*one_hot[2]), 1)
 
-    for i,item in enumerate(items):
-        xsum = 0
-        ysum = 0
-        for kp in item:
-            xsum += kp.pt[0]
-            ysum += kp.pt[1]
-        avg_item_pt = (xsum/len(item), ysum/len(item))
-        ones = [0,0,0]
-        ones[i] = 1
-        cv2.circle(frames[i],(int(avg_item_pt[0]),int(avg_item_pt[1])), 5, (255*ones[0],255*ones[1],255*ones[2]), -1)
+    # for i,item in enumerate(items):
+    #     xsum = 0
+    #     ysum = 0
+    #     for kp in item:
+    #         xsum += kp.pt[0]
+    #         ysum += kp.pt[1]
+    #     avg_item_pt = (xsum/len(item), ysum/len(item))
+    #     ones = [0,0,0]
+    #     ones[i] = 1
+    #     cv2.circle(frames[i],(int(avg_item_pt[0]),int(avg_item_pt[1])), 5, (255*ones[0],255*ones[1],255*ones[2]), -1)
 
     # Combine smaller frames into one
     frame[0:480, 0:640/3] = frames[0]
