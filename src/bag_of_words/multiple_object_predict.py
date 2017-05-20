@@ -59,6 +59,19 @@ while(True):
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(frames[i], predictions[0], (40,100), font, 1, (255,255,255), 2)
 
+            gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+
+            ones = [0,0,0]
+            ones[i] = 1
+
+            contours, hierarchy = cv2.findContours(gray,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+            contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
+            cnt = contours[0]
+            rect = cv2.minAreaRect(cnt)
+            box = np.int0(cv2.cv.BoxPoints(rect))
+            cv2.drawContours(frames[i],[box],0,(255*ones[0],255*ones[1],255*ones[2]),2)
+
+
     for i,item in enumerate(items):
         xsum = 0
         ysum = 0
