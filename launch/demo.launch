@@ -1,17 +1,16 @@
 <launch>
 
-
 <!-- name: ['left_e0', 'left_e1', 'left_s0', 'left_s1', 'left_w0', 'left_w1', 'left_w2']
-position: [-0.5852136705782853, 1.492946801809479, -0.16835439147042416, -0.7071651432151758, 0.5641214347448609, 0.9491506125040997, -0.19711653124327566] -->
+position: [-0.48703890015361884, 1.3100195928541434, -0.09894176081860918, -0.7079321336091184, 0.4206942310775747, 1.058830238837907, -3.046869339937403] -->
 
   <!-- Good position for the arm so the camera can see all 3 objects -->
-  <param name="left_w0" value="0.5641214347448609"/>
-  <param name="left_w1" value="0.9491506125040997"/>
-  <param name="left_w2" value="-0.19711653124327566"/>
-  <param name="left_e0" value="-0.5852136705782853"/>
-  <param name="left_e1" value="1.492946801809479"/>
-  <param name="left_s0" value="-0.16835439147042416"/>
-  <param name="left_s1" value="-0.7071651432151758"/>
+  <param name="left_w0" value="0.4206942310775747"/>
+  <param name="left_w1" value="1.058830238837907"/>
+  <param name="left_w2" value="-3.046869339937403"/>
+  <param name="left_e0" value="-0.48703890015361884"/>
+  <param name="left_e1" value="1.3100195928541434"/>
+  <param name="left_s0" value="-0.09894176081860918"/>
+  <param name="left_s1" value="-0.7079321336091184"/>
 
   <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.28 0.10 0.19 0 0 0 base camera_link 1000" />
 
@@ -40,6 +39,7 @@ position: [-0.5852136705782853, 1.492946801809479, -0.16835439147042416, -0.7071
   <node pkg="object_recognition" type="baxter_object_prediction.py" name="baxter_object_prediction" output="screen" respawn="true"/>
 
   <!-- need to modify this somehow -->
-  <node pkg="object_recognition" type="pickup_object.py" name="pickup_object" output="screen" respawn="false" launch-prefix="xterm -e "/>
+  <!-- <node pkg="object_recognition" type="pickup_object.py" name="pickup_object" output="screen" respawn="true" launch-prefix="xterm -e "/> -->
+  <node pkg="object_recognition" type="pickup_object.py" name="pickup_object" output="screen" respawn="false" />
 
 </launch>
