@@ -3,6 +3,7 @@ import sys
 import rospy
 import cv2
 import numpy as np
+from std_msgs.msg import Bool
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
@@ -13,10 +14,10 @@ from object_recognition.msg import ObjectInfo
 class webcam_image:
     def __init__(self):
         self.bridge = CvBridge()
-        # webcam Subscriber
-        # self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.callback)
         # baxter camera Subscriber
         self.image_sub = rospy.Subscriber("/cameras/left_hand_camera/image",Image,self.callback)
+        # Subscriber to determine whether or not to use vision
+        self.use_vision_sub = rospy.Subscriber("use_vision",Bool,self.vision_check)
         # Publisher
         self.object_location_pub = rospy.Publisher("object_location",ObjectInfo,queue_size=10)
 
@@ -24,105 +25,119 @@ class webcam_image:
         self.object_info.names = ['','','']
         self.object_info.x = [0,0,0]
         self.object_info.y = [0,0,0]
+        self.object_info.theta = [0,0,0]
+        self.use_vision = True
+
+    def vision_check(self,data):
+        self.use_vision = data.data
 
     def callback(self,data):
-        try:
-            frame = self.bridge.imgmsg_to_cv2(data,"bgr8")
-        except CvBridgeError as e:
-            print("==[CAMERA MANAGER]==",e)
+        if self.use_vision:
+            try:
+                frame = self.bridge.imgmsg_to_cv2(data,"bgr8")
+            except CvBridgeError as e:
+                print("==[CAMERA MANAGER]==",e)
 
-        global counter
+            global counter
 
-        if counter > 4:
-            counter = 0
+            if counter > 4:
+                counter = 0
 
-        scale = 0.75
-        frame = (frame*scale).astype(np.uint8)
+            scale = 0.75
+            frame = (frame*scale).astype(np.uint8)
 
-        # Split frame into left and right halves
-        left_frame = frame[0:frame.shape[0], 0:frame.shape[1]/3]
-        middle_frame = frame[0:frame.shape[0], frame.shape[1]/3:2*frame.shape[1]/3]
-        right_frame = frame[0:frame.shape[0], 2*frame.shape[1]/3:frame.shape[1]]
+            # Split frame into left and right halves
+            left_frame = frame[0:frame.shape[0], 0:frame.shape[1]/3]
+            middle_frame = frame[0:frame.shape[0], frame.shape[1]/3:2*frame.shape[1]/3]
+            right_frame = frame[0:frame.shape[0], 2*frame.shape[1]/3:frame.shape[1]]
 
-        # Create list of left and right images
-        frames = [left_frame, middle_frame, right_frame]
+            # Create list of left and right images
+            frames = [left_frame, middle_frame, right_frame]
 
-        for i,f in enumerate(frames):
-            kps, des = sift.detectAndCompute(f, None)
-            frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
+            for i,f in enumerate(frames):
+                kps, des = sift.detectAndCompute(f, None)
+                frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
 
-            # Convert current index to one_hot list representation for color assignment later
-            one_hot = [0,0,0]
-            one_hot[i] = 1
+                # Convert current index to one_hot list representation for color assignment later
+                one_hot = [0,0,0]
+                one_hot[i] = 1
 
-            # Basic threshold example
-            gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+                # Basic threshold example
+                gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
 
-            # CHANGE THESE VALUES TO CALIBRATE BOUNDING BOXES
-            th, dst = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY)
-            # cv2.imshow('test' + str(i), dst)
+                # CHANGE THESE VALUES TO CALIBRATE BOUNDING BOXES
+                th, dst = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY)
+                # cv2.imshow('test' + str(i), dst)
 
-            # Find contours of each partial frame and put bounding box around contour
-            contours, hierarchy = cv2.findContours(dst,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-            contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
-            cnt = contours[0]
+                # Find contours of each partial frame and put bounding box around contour
+                contours, hierarchy = cv2.findContours(dst,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+                contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
+                cnt = contours[0]
 
-            M = cv2.moments(cnt)
-            self.object_info.x[i] = int(M["m10"]/M["m00"])
-            self.object_info.y[i] = int(M["m01"]/M["m00"])
+                # M = cv2.moments(cnt)
+                # self.object_info.x[i] = int(M["m10"]/M["m00"])
+                # self.object_info.y[i] = int(M["m01"]/M["m00"])
 
-            # cv2.circle(frames[i],(int(M["m10"]/M["m00"]),int(M["m01"]/M["m00"])), 5, (255*one_hot[0],255*one_hot[1],255*one_hot[2]), -1)
+                # cv2.circle(frames[i],(int(M["m10"]/M["m00"]),int(M["m01"]/M["m00"])), 5, (255*one_hot[0],255*one_hot[1],255*one_hot[2]), -1)
 
-            rect = cv2.minAreaRect(cnt)
-            box = cv2.cv.BoxPoints(rect)
-            cv2.drawContours(frames[i],[np.int0(box)],0,(255*one_hot[0],255*one_hot[1],255*one_hot[2]),2)
+                rect = cv2.minAreaRect(cnt)
+                box = cv2.cv.BoxPoints(rect)
+                cv2.drawContours(frames[i],[np.int0(box)],0,(255*one_hot[0],255*one_hot[1],255*one_hot[2]),2)
 
-            # Check to make sure des has elements and there are at least 15 keypoints
-            if des is not None and len(kps) > 15:
-                test_features = np.zeros((1, k), "float32")
-                words, distance = vq(whiten(des), vocabulary)
-                for w in words:
-                    if w >= 0 and w < 100:
-                        test_features[0][w] += 1
+                # Calculate angle and center of each bounding box
+                if len(cnt) > 5:
+                    (x,y),(MA,mA),angle = cv2.fitEllipse(cnt)
+                    if x >= 0 and y >= 0:
+                        self.object_info.x[i] = int(x) + frame.shape[1]/3 * i
+                        self.object_info.y[i] = int(y)
+                        self.object_info.theta[i] = np.deg2rad(angle)
 
-                # Scale the features
-                test_features = std_slr.transform(test_features)
+                # Check to make sure des has elements and there are at least 15 keypoints
+                if des is not None and len(kps) > 15:
+                    test_features = np.zeros((1, k), "float32")
+                    words, distance = vq(whiten(des), vocabulary)
+                    for w in words:
+                        if w >= 0 and w < 100:
+                            test_features[0][w] += 1
 
-                # predictions based on classifier (more than 2)
-                predictions[i][counter] = [class_names[j] for j in classifier.predict(test_features)][0]
-                prediction = max(set(predictions[i]), key=predictions[i].count)
+                    # Scale the features
+                    test_features = std_slr.transform(test_features)
 
-                self.object_info.names[i] = prediction
+                    # predictions based on classifier (more than 2)
+                    predictions[i][counter] = [class_names[j] for j in classifier.predict(test_features)][0]
+                    prediction = max(set(predictions[i]), key=predictions[i].count)
 
-                # Find the point at the top of each bounding box to put label
-                y = int(min(box[0][1],box[1][1],box[2][1],box[3][1]))
-                x = [int(pt[0]) for pt in box if int(pt[1]) == y][0]
+                    self.object_info.names[i] = prediction
 
-                # Add label to partial frame
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(frames[i], prediction, (x,y-5), font, 0.5, (255*one_hot[0],255*one_hot[1],255*one_hot[2]), 1)
+                    # Find the point at the top of each bounding box to put label
+                    labelY = int(min(box[0][1],box[1][1],box[2][1],box[3][1]))
+                    labelX = [int(pt[0]) for pt in box if int(pt[1]) == labelY][0]
 
-        # Combine smaller frames into one
-        frame[0:frame.shape[0], 0:frame.shape[1]/3] = frames[0]
-        frame[0:frame.shape[0], frame.shape[1]/3:2*frame.shape[1]/3] = frames[1]
-        frame[0:frame.shape[0], 2*frame.shape[1]/3:frame.shape[1]] = frames[2]
+                    # Add label to partial frame
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(frames[i], prediction, (labelX,labelY-5), font, 0.5, (255*one_hot[0],255*one_hot[1],255*one_hot[2]), 1)
 
-        # Add a dividing line down the middle of the frame
-        cv2.line(frame, (frame.shape[1]/3,0), (frame.shape[1]/3,frame.shape[0]), (255,255,255), 1)
-        cv2.line(frame, (2*frame.shape[1]/3,0), (2*frame.shape[1]/3,frame.shape[0]), (255,255,255), 1)
+            # Combine smaller frames into one
+            frame[0:frame.shape[0], 0:frame.shape[1]/3] = frames[0]
+            frame[0:frame.shape[0], frame.shape[1]/3:2*frame.shape[1]/3] = frames[1]
+            frame[0:frame.shape[0], 2*frame.shape[1]/3:frame.shape[1]] = frames[2]
 
-        # Resize image to fit monitor (if monitor is attached)
-        if needResizing:
-            frame = cv2.resize(frame, (1920, 1080), interpolation = cv2.INTER_CUBIC)
+            # Add a dividing line down the middle of the frame
+            cv2.line(frame, (frame.shape[1]/3,0), (frame.shape[1]/3,frame.shape[0]), (255,255,255), 1)
+            cv2.line(frame, (2*frame.shape[1]/3,0), (2*frame.shape[1]/3,frame.shape[0]), (255,255,255), 1)
 
-        counter += 1
+            # Resize image to fit monitor (if monitor is attached)
+            if needResizing:
+                frame = cv2.resize(frame, (1920, 1080), interpolation = cv2.INTER_CUBIC)
 
-        # Display the resulting frame
-        cv2.imshow('f', frame)
+            counter += 1
 
-        self.object_location_pub.publish(self.object_info)
+            # Display the resulting frame
+            cv2.imshow('f', frame)
 
-        cv2.waitKey(1)
+            self.object_location_pub.publish(self.object_info)
+
+            cv2.waitKey(1)
 
 def main(args):
     rospy.init_node('webcam_image', anonymous=True)

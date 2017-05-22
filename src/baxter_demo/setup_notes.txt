@@ -3,7 +3,7 @@ Position of Left Arm for Camera
 25cm from table (measured a end of red part of hand, where the gripper is attached)
 /robot/joint_states
 name: ['left_e0', 'left_e1', 'left_s0', 'left_s1', 'left_w0', 'left_w1', 'left_w2']
-position: [-0.48703890015361884, 1.3100195928541434, -0.09894176081860918, -0.7079321336091184, 0.4206942310775747, 1.058830238837907, -3.046869339937403]
+position: [-0.44830588525951215, 1.8465293734170667, -0.004601942363656241, -1.0043739208679747, 0.34476218207724674, 0.8018884568671001, -3.0418839023767754]
 
 /robot/limb/left/endpoint_state
 pose:
