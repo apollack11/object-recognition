@@ -17,7 +17,7 @@ class webcam_image:
         # baxter camera Subscriber
         self.image_sub = rospy.Subscriber("/cameras/left_hand_camera/image",Image,self.callback)
         # Subscriber to determine whether or not to use vision
-        self.use_vision_sub = rospy.Subscriber("use_vision",Bool,self.vision_check)
+        self.is_moving_sub = rospy.Subscriber("is_moving",Bool,self.check_moving)
         # Publisher
         self.object_location_pub = rospy.Publisher("object_location",ObjectInfo,queue_size=10)
 
@@ -26,13 +26,13 @@ class webcam_image:
         self.object_info.x = [0,0,0]
         self.object_info.y = [0,0,0]
         self.object_info.theta = [0,0,0]
-        self.use_vision = True
+        self.is_moving = False
 
-    def vision_check(self,data):
-        self.use_vision = data.data
+    def check_moving(self,data):
+        self.is_moving = data.data
 
     def callback(self,data):
-        if self.use_vision:
+        if not self.is_moving:
             try:
                 frame = self.bridge.imgmsg_to_cv2(data,"bgr8")
             except CvBridgeError as e:
@@ -56,7 +56,7 @@ class webcam_image:
 
             for i,f in enumerate(frames):
                 kps, des = sift.detectAndCompute(f, None)
-                frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
+                # frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
 
                 # Convert current index to one_hot list representation for color assignment later
                 one_hot = [0,0,0]
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     print "OpenCV Version:",cv2.__version__
 
     # Load the classifier, class names, scaler, number of clusters and vocabulary
-    classifier, class_names, std_slr, k, vocabulary = joblib.load("/home/adam/ros-workspaces/winterproject_ws/src/object_recognition/src/baxter_demo/dataset6.pkl")
+    classifier, class_names, std_slr, k, vocabulary = joblib.load("/home/adam/ros-workspaces/baxter_ws/src/object_recognition/src/baxter_demo/dataset7.pkl")
 
     # Create SIFT object
     sift = cv2.SIFT()

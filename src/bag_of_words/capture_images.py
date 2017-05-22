@@ -3,7 +3,6 @@ import argparse as ap
 import cv2
 import numpy as np
 import os
-import time
 
 cap = cv2.VideoCapture(0)
 

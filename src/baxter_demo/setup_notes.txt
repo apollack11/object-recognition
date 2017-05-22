@@ -1,3 +1,4 @@
+Gripper: Screw into 1-3 and 1-3
 
 Position of Left Arm for Camera
 25cm from table (measured a end of red part of hand, where the gripper is attached)
@@ -8,18 +9,18 @@ position: [-0.44830588525951215, 1.8465293734170667, -0.004601942363656241, -1.0
 /robot/limb/left/endpoint_state
 pose:
   position:
-    x: 0.696645822981
-    y: 0.415227148638
-    z: -0.0373309561678
+    x: 0.570406650602
+    y: 0.50363993062
+    z: 0.00333971663214
   orientation:
-    x: -0.0269334721501
-    y: 0.999606731271
-    z: 0.00715598236236
-    w: -0.00312454675879
+    x: 0.999721933778
+    y: 0.0227170847978
+    z: -0.0045985822477
+    w: -0.00434076300482
 
 
 Left Arm Height:
-z: -0.0370359868101
+z: 0.00333971663214
 
 Table Height:
 z: -0.220459863636
