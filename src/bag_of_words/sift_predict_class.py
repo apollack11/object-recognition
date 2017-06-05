@@ -31,7 +31,6 @@ group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-t", "--testset", help="Path to test set")
 group.add_argument("-s", "--objectset", help="Path to object set")
 group.add_argument("-i", "--image", help="Path to image")
-parser.add_argument('-v',"--visualize", action='store_true')
 args = vars(parser.parse_args())
 
 # Get the path of the testing image(s) and store them in a list

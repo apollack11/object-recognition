@@ -37,7 +37,7 @@ while(True):
 
     for i,f in enumerate(frames):
         kps, des = sift.detectAndCompute(f, None)
-        # frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
+        frames[i] = cv2.drawKeypoints(f, kps, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # draw SIFT points
 
         # Check to make sure des has elements and there are at least 15 keypoints
         if des is not None and len(kps) > 15:
@@ -59,7 +59,11 @@ while(True):
 
             # Find contours of each partial frame and put bounding box around contour
             gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
-            contours, hierarchy = cv2.findContours(gray,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+
+            th, dst = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+            cv2.imshow('test' + str(i), dst)
+
+            contours, hierarchy = cv2.findContours(dst,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
             contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
             cnt = contours[0]
             rect = cv2.minAreaRect(cnt)
