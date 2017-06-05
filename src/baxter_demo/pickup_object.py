@@ -85,6 +85,9 @@ def pickup():
     width = 640
     cx = object_location[0]
     cy = object_location[1]
+
+    if object_name == 'eraser':
+        cx -= 5
     # Convert pixel coordinates to baxter coordinates
     xb = (cy - (height/2))*pixel_size*h + x0 + x_offset
     yb = (cx - (width/2))*pixel_size*h + y0  + y_offset
@@ -95,6 +98,7 @@ def pickup():
 
     dsafe = [xb, yb, zsafe, 0.99, 0.01, 0.01, 0.01]
     dsafe_rotated = [xb, yb, zsafe, object_orientation[3], object_orientation[2], object_orientation[1], object_orientation[0]]
+    dfront = [0.75, camera_y, zpick, object_orientation[3], object_orientation[2], object_orientation[1], object_orientation[0]]
     dpick = [xb, yb, zpick, object_orientation[3], object_orientation[2], object_orientation[1], object_orientation[0]]
     camera_rotated = [camera_x, camera_y, camera_z, object_orientation[3], object_orientation[2], object_orientation[1], object_orientation[0]]
     initial = [camera_x, camera_y, camera_z, 0.99, 0.01, 0.01, 0.01]
@@ -112,7 +116,7 @@ def pickup():
     pnode.initplannode(dpick, "left")
 
     if object_name == 'eraser':
-        gc.command(position=60.0, effort=50.0)
+        gc.command(position=70.0, effort=50.0)
         gc.wait()
     elif object_name == 'marker':
         gc.command(position=5.0, effort=50.0)
@@ -126,12 +130,12 @@ def pickup():
     rospy.sleep(1)
 
     print "Let's put the object back down"
-    pnode.initplannode(dpick, "left")
+    pnode.initplannode(dfront, "left")
 
     gc.command(position=100.0, effort=50.0)
     gc.wait()
 
-    pnode.initplannode(dsafe_rotated, "left")
+    # pnode.initplannode(dsafe_rotated, "left")
     pnode.initplannode(initial, "left")
 
     # Publish that Baxter has stopped moving
